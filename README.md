@@ -11,4 +11,4 @@ Options (open el.exe.config")
 
 -FolderDepth : the depth to look for subfolders from top folder. Either numerical value or * to look everywhere.
 
-!(http://i.imgur.com/uqH0s1H.png)
+![sample picture](http://i.imgur.com/uqH0s1H.png)
