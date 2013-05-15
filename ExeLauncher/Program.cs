@@ -10,7 +10,7 @@ namespace ExeLauncher
 		private static void Main(string[] args)
 		{
 			Console.WriteLine("ExeLauncher");
-			Console.WriteLine("(c) 2001 Marius  Gheorghe");
+			Console.WriteLine("(c) 2012-2013 Marius Gheorghe");
 			Console.WriteLine("");
 
 			try
@@ -27,10 +27,15 @@ namespace ExeLauncher
 			}
 
 			//any paths
-
 			if (ApplicationContext.Paths.Count == 0)
 			{
-				Console.WriteLine("No valid input paths found. Bailing out.... ");
+				Console.WriteLine("No valid input paths found. Modify the config file and enter the paths.");
+				return;
+			}
+
+			if (args.Length == 1 && args[0] == "?")
+			{
+				Console.WriteLine("Sample: el starcraft.exe");
 				return;
 			}
 
@@ -61,11 +66,8 @@ namespace ExeLauncher
 
 					return;
 				}
-				else
-				{
-				}
 			}
-
+			
 			bool result = (new Launcher()).Launch(command);
 
 			if (result == false)
@@ -76,6 +78,8 @@ namespace ExeLauncher
 			CommandPairManager.Persist();
 		}
 
+
+	
 		private static bool ParseConfig()
 		{
 			string input = ConfigurationManager.AppSettings["Paths"];

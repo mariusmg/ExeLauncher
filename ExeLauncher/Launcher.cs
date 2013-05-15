@@ -78,9 +78,7 @@ namespace ExeLauncher
 
                 if (current > this.depth)
                 {
-
-                    Console.WriteLine("Bailing out of {0} due to depth restriction", inputPath);
-
+                   // Console.WriteLine("Bailing out of {0} due to depth restriction", inputPath);
                     return;
                 }
             }
