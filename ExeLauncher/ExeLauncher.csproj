@@ -62,12 +62,15 @@
   <ItemGroup>
     <Compile Include="ApplicationContext.cs" />
     <Compile Include="CommandPair.cs" />
+    <Compile Include="CommandPairManager.cs" />
     <Compile Include="Launcher.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">

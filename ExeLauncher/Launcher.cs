@@ -36,12 +36,19 @@ namespace ExeLauncher
                 {
                     if (hasFixedDepth)
                     {
-                        currentRootDepth = current.Split(new char[] { Path.DirectorySeparatorChar }, StringSplitOptions.None).Length;
+                        currentRootDepth = current.Split(new[] { Path.DirectorySeparatorChar }, StringSplitOptions.None).Length;
                     }
-                    
-                    FindIt(current, exeFileName, hasExtension);
 
-                    if (launched)
+	                if (exeFileName.EndsWith("*"))
+	                {
+		                FindItWithMatching(current, exeFileName);
+	                }
+	                else
+	                {
+		                FindIt(current, exeFileName, hasExtension);
+	                }
+
+	                if (launched)
                     {
                         return true;
                     }
@@ -54,6 +61,26 @@ namespace ExeLauncher
 
             return false;
         }
+
+
+		private void FindItWithMatching(string inputPath, string matchingFileName)
+		{
+
+			if (!inputPath.EndsWith(@"\"))
+			{
+				inputPath += @"\";
+			}
+
+
+			string[] files = Directory.GetFiles(inputPath, matchingFileName + ".exe",SearchOption.AllDirectories);
+
+			if (files.Length > 0)
+			{
+				RunProcess(files);
+				return;
+			}
+
+		}
 
         private void FindIt(string inputPath, string exeFileName, bool hasExtension)
         {
@@ -79,12 +106,9 @@ namespace ExeLauncher
                 if (current > this.depth)
                 {
                    // Console.WriteLine("Bailing out of {0} due to depth restriction", inputPath);
-                    return;
+                   return;
                 }
             }
-
-            //for debugging
-            //Console.WriteLine(inputPath);
 
             string[] files;
 
@@ -127,6 +151,8 @@ namespace ExeLauncher
                 FindIt(d, exeFileName, hasExtension);
             }
         }
+
+		
 
         public void RunProcess(string[] files)
         {
