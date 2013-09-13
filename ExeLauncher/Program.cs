@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 
@@ -9,6 +10,10 @@ namespace ExeLauncher
 	{
 		private static void Main(string[] args)
 		{
+
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
+
 			Console.WriteLine("ExeLauncher");
 			Console.WriteLine("(c) 2012-2013 Marius Gheorghe");
 			Console.WriteLine("");
@@ -87,7 +92,11 @@ namespace ExeLauncher
 			string extensions = ConfigurationManager.AppSettings["Extensions"];
 
 			string depth = ConfigurationManager.AppSettings["FolderDepth"];
-
+			
+			string cacheFuzzySearches = ConfigurationManager.AppSettings["CacheFuzzyMatching"];
+			
+			ApplicationContext.CacheFuzzyMatches = Convert.ToBoolean(cacheFuzzySearches);
+			
 			if (string.IsNullOrEmpty(depth))
 			{
 				Console.WriteLine("Invalid depth setting. Must be * for everything or positive number for folder depth");

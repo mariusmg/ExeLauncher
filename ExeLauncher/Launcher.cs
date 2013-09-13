@@ -4,177 +4,179 @@ using System.IO;
 
 namespace ExeLauncher
 {
-    public class Launcher
-    {
-        private bool launched;
-
-        private bool hasFixedDepth = false;
-
-        private int depth;
-
-        private int currentRootDepth;
-
-        public bool Launch(string exeFileName)
-        {
-            launched = false;
-
-            //determine if we have a file with extension
-            bool hasExtension = exeFileName.IndexOf('.') != -1;
+	public class Launcher
+	{
+		private int currentRootDepth;
+		private int depth;
+		private bool hasFixedDepth;
+		private bool launched;
 
 
-            //check recursion
+		public bool Launch(string exeFileName)
+		{
+			launched = false;
 
-            if (ApplicationContext.Depth != ApplicationContext.MAX_DEPTH)
-            {
-                depth = Int32.Parse(ApplicationContext.Depth);
-                hasFixedDepth = true;
-            }
+			//determine if we have a file with extension
+			bool hasExtension = exeFileName.IndexOf('.') != -1;
 
-            foreach (string current in ApplicationContext.Paths)
-            {
-                try
-                {
-                    if (hasFixedDepth)
-                    {
-                        currentRootDepth = current.Split(new[] { Path.DirectorySeparatorChar }, StringSplitOptions.None).Length;
-                    }
+			//check recursion
 
-	                if (exeFileName.EndsWith("*"))
-	                {
-		                FindItWithMatching(current, exeFileName);
-	                }
-	                else
-	                {
-		                FindIt(current, exeFileName, hasExtension);
-	                }
+			if (ApplicationContext.Depth != ApplicationContext.MAX_DEPTH)
+			{
+				depth = Int32.Parse(ApplicationContext.Depth);
+				hasFixedDepth = true;
+			}
 
-	                if (launched)
-                    {
-                        return true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Error " + ex.Message);
-                }
-            }
+			foreach (string current in ApplicationContext.Paths)
+			{
+				try
+				{
+					if (hasFixedDepth)
+					{
+						currentRootDepth = current.Split(new[] { Path.DirectorySeparatorChar }, StringSplitOptions.None).Length;
+					}
 
-            return false;
-        }
+					if (exeFileName.EndsWith("*"))
+					{
+						FindItWithMatching(current, exeFileName);
+					}
+					else
+					{
+						FindIt(current, exeFileName, hasExtension);
+					}
 
+					if (launched)
+					{
+						return true;
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine("Error " + ex.Message);
+				}
+			}
+
+			return false;
+		}
 
 		private void FindItWithMatching(string inputPath, string matchingFileName)
 		{
+			if (!inputPath.EndsWith(@"\"))
+			{
+				inputPath += @"\";
+			}
+
+			string[] files = Directory.GetFiles(inputPath, matchingFileName + ".exe", SearchOption.AllDirectories);
+			
+			if (files.Length > 0)
+			{
+
+				if (ApplicationContext.CacheFuzzyMatches)
+				{
+					CommandPairManager.AddCommand( new CommandPair(){Command = matchingFileName, Path = files[0]});
+				}
+
+				//the matches for fuzzy searching are not cached
+				RunProcess(files);
+			}
+		}
+
+
+
+		private void FindIt(string inputPath, string exeFileName, bool hasExtension)
+		{
+			if (launched)
+			{
+				return;
+			}
 
 			if (!inputPath.EndsWith(@"\"))
 			{
 				inputPath += @"\";
 			}
 
-
-			string[] files = Directory.GetFiles(inputPath, matchingFileName + ".exe",SearchOption.AllDirectories);
-
-			if (files.Length > 0)
+			if (hasFixedDepth)
 			{
-				RunProcess(files);
-				return;
+				//check depth 
+
+				int length = inputPath.Split(new[] { Path.DirectorySeparatorChar }, StringSplitOptions.None).Length;
+
+				int current = length - currentRootDepth;
+
+				if (current > depth)
+				{
+
+
+#if DEBUG
+					Console.WriteLine("Bailing out of {0} due to depth restriction", inputPath);
+#endif
+
+					return;
+				}
 			}
+			
+			string[] files;
+			
+			if (hasExtension)
+			{
+				//user is looking for specific file
+				files = Directory.GetFiles(inputPath, exeFileName);
 
-		}
+				if (files.Length > 0)
+				{
+					RunProcess(files);
 
-        private void FindIt(string inputPath, string exeFileName, bool hasExtension)
-        {
-            if (launched)
-            {
-                return;
-            }
+					CommandPairManager.AddCommand(new CommandPair() { Command = exeFileName, Path = files[0] });
 
-            if (!inputPath.EndsWith(@"\"))
-            {
-                inputPath += @"\";
-            }
+					return;
+				}
+			}
+			else
+			{
+				//search with all extensions
+				foreach (string ext in ApplicationContext.Extensions)
+				{
+					files = Directory.GetFiles(inputPath, exeFileName + "." + ext);
 
-
-            if (hasFixedDepth)
-            {
-                //check depth 
-
-                int length = inputPath.Split(new char[] { Path.DirectorySeparatorChar }, StringSplitOptions.None).Length;
-
-                int current = length - currentRootDepth;
-
-                if (current > this.depth)
-                {
-                   // Console.WriteLine("Bailing out of {0} due to depth restriction", inputPath);
-                   return;
-                }
-            }
-
-            string[] files;
-
-            if (hasExtension)
-            {
-                //user is looking for specific file
-                files = Directory.GetFiles(inputPath, exeFileName);
-
-                if (files.Length > 0)
-                {
-                    RunProcess(files);
-
-					CommandPairManager.AddCommand(new CommandPair(){Command = exeFileName, Path = files[0]});
-
-                    return;
-                }
-            }
-            else
-            {
-                //search with all extensions
-                foreach (string ext in ApplicationContext.Extensions)
-                {
-                    files = Directory.GetFiles(inputPath, exeFileName + "." + ext);
-
-                    if (files.Length > 0)
-                    {
-                        RunProcess(files);
+					if (files.Length > 0)
+					{
+						RunProcess(files);
 
 						CommandPairManager.AddCommand(new CommandPair() { Command = exeFileName, Path = files[0] });
 
 						return;
-                    }
-                }
-            }
+					}
+				}
+			}
 
-            string[] directories = Directory.GetDirectories(inputPath);
+			string[] directories = Directory.GetDirectories(inputPath);
 
-            foreach (string d in directories)
-            {
-                FindIt(d, exeFileName, hasExtension);
-            }
-        }
+			foreach (string d in directories)
+			{
+				FindIt(d, exeFileName, hasExtension);
+			}
+		}
 
-		
+		public void RunProcess(string[] files)
+		{
+			Console.WriteLine("Running it from {0}", files[0]);
 
-        public void RunProcess(string[] files)
-        {
-            Console.WriteLine("Running it from {0}", files[0]);
-
-            try
-            {
-
+			try
+			{
 				ProcessStartInfo ps = new ProcessStartInfo();
-	            ps.WorkingDirectory = Path.GetDirectoryName(files[0]) ?? string.Empty;
-	            ps.FileName = files[0];
+				ps.WorkingDirectory = Path.GetDirectoryName(files[0]) ?? string.Empty;
+				ps.FileName = files[0];
 
-                Process.Start(ps);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Process failed to start {0}", e.Message);
-            }
-            finally
-            {
-                launched = true;
-            }
-        }
-    }
+				Process.Start(ps);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine("Process failed to start {0}", e.Message);
+			}
+			finally
+			{
+				launched = true;
+			}
+		}
+	}
 }
