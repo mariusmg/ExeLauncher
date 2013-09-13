@@ -1,9 +1,10 @@
 ExeLauncher-
 ============
 
-CLI launcher which aims to "fix" the fact that PATH environment variable entry on Windows is not recursive.
+Is a command line app launcher for Windows.
 
-Options (open el.exe.config")
+
+Options to tweak (open el.exe.config) :
 
 -Paths : enter list of paths where the app will look for files (values must be comma separated).
 
