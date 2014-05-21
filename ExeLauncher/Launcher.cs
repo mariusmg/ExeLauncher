@@ -164,6 +164,8 @@ namespace ExeLauncher
 			try
 			{
 				ProcessStartInfo ps = new ProcessStartInfo();
+				ps.RedirectStandardOutput = true;
+				ps.UseShellExecute = false;
 				ps.WorkingDirectory = Path.GetDirectoryName(files[0]) ?? string.Empty;
 				ps.FileName = files[0];
 
