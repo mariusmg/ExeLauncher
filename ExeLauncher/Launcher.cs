@@ -12,6 +12,13 @@ namespace ExeLauncher
 		private bool launched;
 
 
+		private string cliArgs = "";
+
+		public Launcher(string cliArgs)
+		{
+			this.cliArgs = cliArgs;
+		}
+
 		public bool Launch(string exeFileName)
 		{
 			launched = false;
@@ -168,6 +175,11 @@ namespace ExeLauncher
 				ps.UseShellExecute = false;
 				ps.WorkingDirectory = Path.GetDirectoryName(files[0]) ?? string.Empty;
 				ps.FileName = files[0];
+
+				if (! string.IsNullOrEmpty(cliArgs))
+				{
+					ps.Arguments = cliArgs;
+				}
 
 				Process.Start(ps);
 			}

@@ -12,7 +12,7 @@ namespace ExeLauncher
 		{
 
 			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-
+			Thread.CurrentThread.Priority = ThreadPriority.Highest;
 
 			Console.WriteLine("ExeLauncher");
 			Console.WriteLine("(c) 2012-2013 Marius Gheorghe");
@@ -38,19 +38,27 @@ namespace ExeLauncher
 				return;
 			}
 
+			//is it help ?
 			if (args.Length == 1 && args[0] == "?")
 			{
 				Console.WriteLine("Sample: el starcraft.exe");
 				return;
 			}
 
-			if (args.Length != 1)
+			string cliArgs = "";
+
+			//has arguments
+			if (args.Length == 2)
 			{
-				Console.WriteLine("Invalid args....pass just the file name without spaces");
+				cliArgs = args[1];
+			}
+
+			if (args.Length > 2)
+			{
+				Console.WriteLine("Invalid number of arguments");
 				return;
 			}
 
-			Thread.CurrentThread.Priority = ThreadPriority.Highest;
 
 			//load previously cached commands
 			CommandPairManager.LoadCommands();
@@ -67,13 +75,13 @@ namespace ExeLauncher
 				{
 					Console.WriteLine("found it in cache");
 
-					(new Launcher()).RunProcess(new[] {commandPair.Path});
+					(new Launcher(cliArgs)).RunProcess(new[] {commandPair.Path});
 
 					return;
 				}
 			}
 			
-			bool result = (new Launcher()).Launch(command);
+			bool result = (new Launcher(cliArgs)).Launch(command);
 
 			if (result == false)
 			{
