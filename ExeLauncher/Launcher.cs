@@ -181,7 +181,10 @@ namespace ExeLauncher
 					ps.Arguments = cliArgs;
 				}
 
-				Process.Start(ps);
+				Process process = Process.Start(ps);
+
+				Console.WriteLine(process.StandardOutput.ReadToEnd());
+				process.WaitForExit();
 			}
 			catch (Exception e)
 			{
