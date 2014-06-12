@@ -1,22 +1,34 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 namespace ExeLauncher
 {
 	public class Launcher
 	{
+		private const string CLI = "/cli";
+
+		private const string DEBUG = "/debug";
+
 		private int currentRootDepth;
 		private int depth;
 		private bool hasFixedDepth;
+
+		private bool hasRunCLI;
+
+		private bool hasRunInDebugMode;
 		private bool launched;
 
+		private List<string> listArguments;
 
-		private string cliArgs = "";
-
-		public Launcher(string cliArgs)
+		public Launcher(List<string> args)
 		{
-			this.cliArgs = cliArgs;
+			listArguments = args;
+
+			hasRunCLI = HasSpecificArgument(CLI);
+			hasRunInDebugMode = HasSpecificArgument(DEBUG);
 		}
 
 		public bool Launch(string exeFileName)
@@ -59,7 +71,10 @@ namespace ExeLauncher
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine("Error " + ex.Message);
+					if (hasRunInDebugMode)
+					{
+						Console.WriteLine("Error " + ex.Message);
+					}
 				}
 			}
 
@@ -74,21 +89,18 @@ namespace ExeLauncher
 			}
 
 			string[] files = Directory.GetFiles(inputPath, matchingFileName + ".exe", SearchOption.AllDirectories);
-			
+
 			if (files.Length > 0)
 			{
-
 				if (ApplicationContext.CacheFuzzyMatches)
 				{
-					CommandPairManager.AddCommand( new CommandPair(){Command = matchingFileName, Path = files[0]});
+					CommandPairManager.AddCommand(new CommandPair { Command = matchingFileName, Path = files[0] });
 				}
 
 				//the matches for fuzzy searching are not cached
 				RunProcess(files);
 			}
 		}
-
-
 
 		private void FindIt(string inputPath, string exeFileName, bool hasExtension)
 		{
@@ -112,18 +124,17 @@ namespace ExeLauncher
 
 				if (current > depth)
 				{
-
-
-#if DEBUG
-					Console.WriteLine("Bailing out of {0} due to depth restriction", inputPath);
-#endif
+					if (hasRunInDebugMode)
+					{
+						Console.WriteLine("Bailing out of {0} due to depth restriction", inputPath);
+					}
 
 					return;
 				}
 			}
-			
+
 			string[] files;
-			
+
 			if (hasExtension)
 			{
 				//user is looking for specific file
@@ -133,7 +144,7 @@ namespace ExeLauncher
 				{
 					RunProcess(files);
 
-					CommandPairManager.AddCommand(new CommandPair() { Command = exeFileName, Path = files[0] });
+					CommandPairManager.AddCommand(new CommandPair { Command = exeFileName, Path = files[0] });
 
 					return;
 				}
@@ -149,7 +160,7 @@ namespace ExeLauncher
 					{
 						RunProcess(files);
 
-						CommandPairManager.AddCommand(new CommandPair() { Command = exeFileName, Path = files[0] });
+						CommandPairManager.AddCommand(new CommandPair { Command = exeFileName, Path = files[0] });
 
 						return;
 					}
@@ -170,15 +181,47 @@ namespace ExeLauncher
 
 			try
 			{
+				if (hasRunCLI)
+				{
+					RunCliProcess(files[0]);
+					return;
+				}
+
 				ProcessStartInfo ps = new ProcessStartInfo();
-				ps.RedirectStandardOutput = true;
-				ps.UseShellExecute = false;
+				ps.UseShellExecute = true;
 				ps.WorkingDirectory = Path.GetDirectoryName(files[0]) ?? string.Empty;
 				ps.FileName = files[0];
 
-				if (! string.IsNullOrEmpty(cliArgs))
+				if (listArguments.Count > 0)
 				{
-					ps.Arguments = cliArgs;
+					ps.Arguments = GetArgumentsAsStrings();
+				}
+
+				Process.Start(ps);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine("Process failed to start {0}", e.Message);
+			}
+			finally
+			{
+				launched = true;
+			}
+		}
+
+		public void RunCliProcess(string filePath)
+		{
+			try
+			{
+				ProcessStartInfo ps = new ProcessStartInfo();
+				ps.RedirectStandardOutput = true;
+				ps.UseShellExecute = false;
+				ps.WorkingDirectory = Path.GetDirectoryName(filePath) ?? string.Empty;
+				ps.FileName = filePath;
+
+				if (listArguments.Count > 0)
+				{
+					ps.Arguments = GetArgumentsAsStrings();
 				}
 
 				Process process = Process.Start(ps);
@@ -194,6 +237,34 @@ namespace ExeLauncher
 			{
 				launched = true;
 			}
+		}
+
+		private string GetArgumentsAsStrings()
+		{
+			StringBuilder builder = new StringBuilder();
+
+			foreach (string s in listArguments)
+			{
+				if (s.ToLower() != CLI && s.ToLower() != DEBUG)
+				{
+					builder.Append(s + " ");
+				}
+			}
+
+			return builder.ToString();
+		}
+
+		private bool HasSpecificArgument(string argument)
+		{
+			foreach (string s in listArguments)
+			{
+				if (s.ToLower() == argument)
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 	}
 }

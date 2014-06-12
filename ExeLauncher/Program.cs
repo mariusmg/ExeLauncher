@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
 using System.IO;
@@ -15,7 +16,7 @@ namespace ExeLauncher
 			Thread.CurrentThread.Priority = ThreadPriority.Highest;
 
 			Console.WriteLine("ExeLauncher");
-			Console.WriteLine("(c) 2012-2013 Marius Gheorghe");
+			Console.WriteLine("(c) 2012-2014 Marius Gheorghe");
 			Console.WriteLine("");
 
 			try
@@ -45,20 +46,13 @@ namespace ExeLauncher
 				return;
 			}
 
-			string cliArgs = "";
 
-			//has arguments
-			if (args.Length == 2)
+			List<string> listArguments = new List<string>();
+
+			for (int i = 1; i < args.Length; i++)
 			{
-				cliArgs = args[1];
+				listArguments.Add(args[i]);
 			}
-
-			if (args.Length > 2)
-			{
-				Console.WriteLine("Invalid number of arguments");
-				return;
-			}
-
 
 			//load previously cached commands
 			CommandPairManager.LoadCommands();
@@ -75,13 +69,13 @@ namespace ExeLauncher
 				{
 					Console.WriteLine("found it in cache");
 
-					(new Launcher(cliArgs)).RunProcess(new[] {commandPair.Path});
+					(new Launcher(listArguments)).RunProcess(new[] { commandPair.Path });
 
 					return;
 				}
 			}
-			
-			bool result = (new Launcher(cliArgs)).Launch(command);
+
+			bool result = (new Launcher(listArguments)).Launch(command);
 
 			if (result == false)
 			{
@@ -92,7 +86,7 @@ namespace ExeLauncher
 		}
 
 
-	
+
 		private static bool ParseConfig()
 		{
 			string input = ConfigurationManager.AppSettings["Paths"];
@@ -100,11 +94,11 @@ namespace ExeLauncher
 			string extensions = ConfigurationManager.AppSettings["Extensions"];
 
 			string depth = ConfigurationManager.AppSettings["FolderDepth"];
-			
+
 			string cacheFuzzySearches = ConfigurationManager.AppSettings["CacheFuzzyMatching"];
-			
+
 			ApplicationContext.CacheFuzzyMatches = Convert.ToBoolean(cacheFuzzySearches);
-			
+
 			if (string.IsNullOrEmpty(depth))
 			{
 				Console.WriteLine("Invalid depth setting. Must be * for everything or positive number for folder depth");
@@ -136,9 +130,9 @@ namespace ExeLauncher
 				return false;
 			}
 
-			string[] paths = input.Split(new[] {";"}, StringSplitOptions.RemoveEmptyEntries);
+			string[] paths = input.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
 
-			string[] exts = extensions.Split(new[] {";"}, StringSplitOptions.RemoveEmptyEntries);
+			string[] exts = extensions.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
 
 			ApplicationContext.Extensions.AddRange(exts);
 

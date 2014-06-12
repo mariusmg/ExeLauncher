@@ -11,7 +11,6 @@ namespace ExeLauncher
 		private const string COMMANDS_FILENAME = "commands.json";
 
 		private static List<CommandPair> commands = new List<CommandPair>();
-		private static FileStream fileStream;
 
 		public static void LoadCommands()
 		{
@@ -33,9 +32,9 @@ namespace ExeLauncher
 
 						commands = (List<CommandPair>) s.ReadObject(fs);
 					}
-					catch (Exception ex)
+					catch (Exception)
 					{
-						//Console.WriteLine("Failed to load commands from ");
+						Console.WriteLine("Failed to load commands from ");
 					}
 				}
 			}
@@ -117,7 +116,7 @@ namespace ExeLauncher
 				{
 					Directory.CreateDirectory(currentDirectory);
 				}
-				catch (Exception ex)
+				catch (Exception)
 				{
 				}
 			}

@@ -30,8 +30,5 @@ namespace ExeLauncher
 			set;
 		}
 
-
-
-
 	}
 }
