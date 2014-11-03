@@ -12,14 +12,16 @@ namespace ExeLauncher
 
 		private const string DEBUG = "/debug";
 
+		private const string CURRENT_FOLDER = "/f";
+
 		private int currentRootDepth;
 		private int depth;
 		private bool hasFixedDepth;
 
 		private bool hasRunCLI;
-
 		private bool hasRunInDebugMode;
 		private bool launched;
+		private bool hasCurrentFolder = false;
 
 		private List<string> listArguments;
 
@@ -28,6 +30,7 @@ namespace ExeLauncher
 			listArguments = args;
 
 			hasRunCLI = HasSpecificArgument(CLI);
+			hasCurrentFolder = HasSpecificArgument(CURRENT_FOLDER);
 			hasRunInDebugMode = HasSpecificArgument(DEBUG);
 		}
 
@@ -216,12 +219,34 @@ namespace ExeLauncher
 				ProcessStartInfo ps = new ProcessStartInfo();
 				ps.RedirectStandardOutput = true;
 				ps.UseShellExecute = false;
-				ps.WorkingDirectory = Path.GetDirectoryName(filePath) ?? string.Empty;
+
+				if (hasCurrentFolder == false)
+				{
+					ps.WorkingDirectory = Path.GetDirectoryName(filePath) ?? string.Empty;
+				}
+				else
+				{
+					ps.WorkingDirectory = Environment.CurrentDirectory;
+				}
+
+#if DEBUG
+				if (hasCurrentFolder)
+				{
+					Console.WriteLine("working folder is " + ps.WorkingDirectory);
+				}
+#endif
 				ps.FileName = filePath;
 
 				if (listArguments.Count > 0)
 				{
-					ps.Arguments = GetArgumentsAsStrings();
+					if (hasCurrentFolder == false)
+					{
+						ps.Arguments = GetArgumentsAsStrings();
+					}
+					else
+					{
+						ps.Arguments = GetArgumentsAsStrings(ps.WorkingDirectory);
+					}
 				}
 
 				Process process = Process.Start(ps);
@@ -238,6 +263,38 @@ namespace ExeLauncher
 				launched = true;
 			}
 		}
+
+
+		private string GetArgumentsAsStrings(string startupPath)
+		{
+			if (! startupPath.EndsWith(@"\"))
+			{
+				startupPath += @"\";
+			}
+
+			Console.WriteLine(startupPath);
+
+			StringBuilder builder = new StringBuilder();
+
+			foreach (string s in listArguments)
+			{
+				if (s.ToLower() != CLI && s.ToLower() != DEBUG)
+				{
+					if (File.Exists(startupPath + s))
+					{
+						Console.WriteLine(startupPath + s);
+						builder.Append( startupPath + s + " ");
+					}
+					else
+					{
+						builder.Append(s + " ");
+					}
+				}
+			}
+
+			return builder.ToString();
+		}
+
 
 		private string GetArgumentsAsStrings()
 		{
